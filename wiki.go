@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+    "net/http"
 )
 
 type Page struct {
@@ -15,6 +16,13 @@ type Page struct {
 func (p *Page) save() error{
     filename := p.Title + ".txt"
     return ioutil.WriteFile(filename,p.Body, 0600)
+}
+
+//View a wiki page by handling the URL's prefixed with /view/
+func viewHandler(w http.ResponseWriter, r *http.Request){
+    title := r.URL.Path[len("/view/"):]
+    p,_ := loadPage(title)
+    fmt.Fprintf(w,"<h1>%s</h1><div>%s</div>",p.Title,p.Body)
 }
 
 //Expectly, Page.save() should return nil, indicate that there is no error
@@ -30,8 +38,6 @@ func loadPage(title string) (*Page,error) {
 }
 
 func main(){
-    p1 := &Page{Title: "TestPage", Body: []byte("This is a sample Page.")}
-    p1.save()
-    p2,_ := loadPage("TestPage")
-    fmt.Println(string(p2.Body))
+    http.HandleFunc("/view/",viewHandler)
+    http.ListenAndServe(":8080",nil)
 }
